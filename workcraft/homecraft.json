@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "name": "黄建 · 个人说明书",
+  "url": "",
+  "logo": "assets/hero.webp",
+  "intro": "一间可以走进去的体素工作室：关于我、我负责的项目与办公地点。",
+  "lang": ["zh"],
+  "homecraft": true
+}
