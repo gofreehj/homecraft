@@ -209,13 +209,18 @@ html[data-theme="light"] #cover .theme-toggle .icon-moon { display: block; }
 
 #cover .hero-art { position: relative; }
 #cover .art-frame {
+  display: block;
   position: relative;
   border: 1px solid rgba(var(--paper-rgb), .18);
   background: #0b1210;
   box-shadow: 0 40px 90px -50px rgba(0, 0, 0, .95), inset 0 0 0 1px rgba(0, 0, 0, .6);
   overflow: hidden;
+  cursor: pointer;
+  transition: border-color .2s ease;
 }
-#cover .art-frame img { display: block; width: 100%; height: auto; }
+#cover .art-frame:hover { border-color: rgba(var(--paper-rgb), .4); }
+#cover .art-frame img { display: block; width: 100%; height: auto; transition: transform .45s cubic-bezier(.2, .7, .2, 1); }
+#cover .art-frame:hover img, #cover .art-frame:focus-visible img { transform: scale(1.025); }
 #cover .art-frame::after {
   content: "";
   position: absolute; inset: 0;
