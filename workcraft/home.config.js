@@ -11,5 +11,5 @@ export default {
   mailbox: { endpoint: '', email: 'huangjian@aimatech.com', turnstileSitekey: '' },
   // 不连公共传送门目录，进屋时不会发出外部请求。
   portal: { directory: [] },
-  badge: true,
+  badge: false,
 };
