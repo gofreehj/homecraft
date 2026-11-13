@@ -31,6 +31,15 @@ for (const dir of [join(repo, 'engine'), join(repo, 'vendor')]) {
   const rel = relative(dir, target);
   if (!rel.startsWith('..') && !isAbsolute(rel)) throw new Error(`refusing to write inside ${dir}`);
 }
+// A target inside workcraft/ must not overwrite a source directory. dist/ is
+// the build output and stays a valid target.
+for (const entry of readdirSync(site)) {
+  if (entry === 'dist') continue;
+  const dir = join(site, entry);
+  if (!existsSync(dir) || !statSync(dir).isDirectory()) continue;
+  const rel = relative(dir, target);
+  if (!rel.startsWith('..') && !isAbsolute(rel)) throw new Error(`refusing to write inside ${dir}`);
+}
 
 const temp = mkdtempSync(join(tmpdir(), 'homecraft-deploy-'));
 const manifestName = '.deploy-manifest.json';
@@ -78,9 +87,10 @@ try {
   const nextSet = new Set(next);
   let removed = 0;
   for (const rel of previous) {
-    if (typeof rel !== 'string' || nextSet.has(rel)) continue;
+    if (typeof rel !== 'string' || nextSet.has(rel) || isAbsolute(rel)) continue;
     const path = resolve(target, rel);
-    if (!relative(target, path).startsWith('..') && existsSync(path) && statSync(path).isFile()) {
+    const inside = relative(target, path);
+    if (inside && !inside.startsWith('..') && !isAbsolute(inside) && existsSync(path) && statSync(path).isFile()) {
       rmSync(path, { force: true });
       removed += 1;
     }
