@@ -46,8 +46,8 @@ node ../tools/check-site.mjs .  # metadata, skin and engine state (no install ne
 ```
 
 `stage.mjs` needs Node.js 22 or newer and downloads `esbuild@0.25.10` through
-`npx` on first use. Set `RES_VER` in `cover.js` after a release so browsers and
-CDNs drop the old bundle.
+`npx` on first use. Run `node tools/bump-res.mjs` before a release so browsers
+and CDNs drop the old bundle.
 
 Deploy `dist/` as the application root. Nothing outside `dist/` ships.
 
@@ -143,6 +143,42 @@ node workcraft/tools/smoke.mjs
 Shared files (`package.json`, `tools/`, `engine/`) are intentionally untouched
 on this branch, which keeps merges conflict-free. Commands live in this README
 instead of `package.json` for the same reason.
+
+## Deploying to Miaoda
+
+Miaoda takes `workcraft/`, `engine/` and `vendor/` from the monorepo as input
+and serves the staged application root, not the source tree. The paths in
+`workcraft/index.html` are source paths: `../engine/style.css` is correct and
+must not be changed to `engine/style.css` for local preview.
+
+Run the version bump before every release, then preview the staged root from
+`workcraft/`:
+
+```sh
+node tools/bump-res.mjs
+node tools/stage.mjs --serve
+```
+
+`bump-res.mjs` increments `RES_VER` and the `cover.css` / `cover.js` query
+versions together, and the independent `content.js` counter. Each run
+increments again, so run it once per release.
+
+`--out <dir>` writes the staged site somewhere other than `workcraft/dist/`;
+relative paths resolve from the current directory. `--quiet` prints only errors
+and the final output path. Deploy the output directory as the application root;
+do not commit `dist/`.
+
+For the hosting repository only, `deploy-mirror.mjs` mirrors `workcraft/`,
+`engine/` and `vendor/` into a temporary monorepo, stages it, and syncs the
+result to a dedicated target:
+
+```sh
+node tools/deploy-mirror.mjs /tmp/site
+```
+
+The target keeps a `.deploy-manifest.json`; files this tool managed on the
+previous run and no longer produces are removed. Files it never managed are
+left alone.
 
 ## Adding files
 
