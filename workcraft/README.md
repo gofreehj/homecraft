@@ -18,7 +18,7 @@ workcraft/
   assets/             cover styles, images, app icons
   world/              the world: layout, house, furniture, showroom
   assets/models/      the Aima headquarters GLB
-  vendor-additions/   three.js addons for this site (glTF loader)
+  vendor-additions/   three.js addons for this site (glTF loader, meshopt decoder)
   engine-additions/   files this site adds to the engine (Feishu app icon)
   tools/
     engine-patch.mjs  the site's engine patches, as exact anchors
@@ -72,6 +72,19 @@ occupies an east campus of its own:
   The two 1F passages through the podium stay open; the reflecting pool is
   blocked.
 
+`aima-build.glb` is meshopt-compressed with `KHR_mesh_quantization` (289 KB,
+down from 1.7 MB). `aima.js` enables the vendored `MeshoptDecoder` on the
+loader. The compression preserves all 15 material names, which `ENV_INTENSITY`
+and `NIGHT_GLOW` look up. To rebuild after editing a source GLB, run from
+`workcraft/`:
+
+```sh
+npx @gltf-transform/cli@4 optimize source.glb assets/models/aima-build.glb --compress meshopt --palette false --simplify false --texture-compress false
+```
+
+`--palette false` keeps the materials separate; the palette pass would merge
+them and break the per-material reflection and night tuning.
+
 The model loads in the background as soon as `buildAima` runs, so the opening
 shot and the bridge view see it without a pop-in; `window.__aimaLoaded` turns
 true when it is added to the scene. At the bridge landing, the `office` station
@@ -85,13 +98,16 @@ removed too.
 
 ### Budget notes
 
-The model is 1.7 MB and adds 15 draw calls, which exceeds the template's
-500 KB initial-load target. The settled house view measures 58 draw calls and
-the office view 56, within the 60 target; the opening shot, which shows both
-islands and the tower, measures 100 on the desktop and 70 on a phone. The model
-also returns two point lights, so with the house's two the engine keeps only
-the first two and the campus lights do not render. These are content-size and
-budget decisions for the site owner, not engine changes.
+The model is 289 KB after meshopt compression, plus the 25 KB decoder; it no
+longer exceeds the 500 KB initial-load target by itself, though the engine
+bundle still sets the total. It adds 15 draw calls. The settled house view
+measures 58 draw calls and the office view 56, within the 60 target. The
+opening shot starts close to the Aima forecourt and measures 21 draw calls at
+both desktop and phone size; the model accounts for 15 of those calls. The
+swoop then crosses the channel to the house. The model returns two point
+lights, so with the house's two the engine keeps only the first two and the
+campus lights do not render. These are content-size and budget decisions for
+the site owner, not engine changes.
 
 ## Engine patches
 

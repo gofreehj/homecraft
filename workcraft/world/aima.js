@@ -10,6 +10,7 @@
 // drives reflective sky sheen and night illumination from `stage`.
 import * as THREE from 'three';
 import { GLTFLoader } from '../vendor/three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from '../vendor/three/addons/libs/meshopt_decoder.module.js';
 import { canvasTexture } from '@engine/world/textures.js';
 import { HQ } from './layout.js';
 
@@ -144,7 +145,10 @@ export function buildAima({ stage }) {
   startLoad = () => {
     if (started) return;
     started = true;
-    new GLTFLoader().load(
+    // The GLB is meshopt-compressed; the decoder is vendored with the loader.
+    const loader = new GLTFLoader();
+    loader.setMeshoptDecoder(MeshoptDecoder);
+    loader.load(
       MODEL.href,
       gltf => {
         if (token !== state.loadToken) return;

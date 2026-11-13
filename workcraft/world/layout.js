@@ -144,9 +144,9 @@ export const SHELTER = { x0: -70, z0: -90, w: 220, d: 140 };
 // Flying out of the house goes through the front doors.
 export const DOORWAY = [{ x: 0.5, y: 1, z: 15 }, { x: 0.5, y: 1.2, z: 18 }];
 export const EXIT = { x: 0.5, z: 18.6 };
-// The opening shot starts high over the whole island (a portrait screen stands
-// further back so the house and the mountain still fit) and looks at `look`.
-export const INTRO = { pos: [46, 62, 122], portrait: [150, 80, 180], look: [64, 30, -10] };
+// The opening shot starts low over the water off the Aima forecourt, looking
+// up at the tower; the swoop then crosses the channel to the house.
+export const INTRO = { pos: [35, 24, 65], portrait: [45, 30, 85], look: [105, 35, -8] };
 
 // The cat stays indoors and naps on the sofa; the dog roams the terrace and
 // comes in by the front door. Routes round the sofa and through the doorway
