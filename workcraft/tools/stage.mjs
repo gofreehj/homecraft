@@ -32,6 +32,13 @@ const ITEMS = ['index.html', 'cover.js', 'content.js', 'home.config.js', 'homecr
 const log = message => console.log(`[stage] ${message}`);
 const bytes = n => `${(n / 1024).toFixed(1)} KB`;
 
+// Entries that staging handles on purpose or that never ship. Anything else at
+// the top level is likely a forgotten ITEMS entry, so warn instead of silently
+// dropping it from the deployed site.
+const NOT_DEPLOYED = new Set(['tools', 'README.md', '.gitignore', 'dist', '.spark', 'vendor-additions', 'engine-additions']);
+const unstaged = readdirSync(site).filter(name => !ITEMS.includes(name) && !NOT_DEPLOYED.has(name));
+if (unstaged.length) log(`warning: not in ITEMS and not deployed: ${unstaged.join(', ')}`);
+
 rmSync(dist, { recursive: true, force: true });
 mkdirSync(dist, { recursive: true });
 
