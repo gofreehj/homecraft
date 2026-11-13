@@ -109,8 +109,9 @@ for (const view of VIEWS) {
     console.log(`  office: ${office.calls} draw calls, ${office.triangles} triangles, ${office.frameMs} ms/frame`);
     await page.screenshot({ path: join(out, `${view.name}-office.png`) });
 
-    // The phone's app tiles, including the Feishu icon this site adds.
-    await page.keyboard.press('p');
+    // The phone's app tiles, including the Feishu icon this site adds. The
+    // 0.2.0 engine gives P and C to the Photo Studio, so use the Dock slot.
+    await page.locator('#hotbar img[data-icon="phone"]').click();
     await page.waitForTimeout(800);
     const phone = await page.evaluate(() => {
       const apps = [...document.querySelectorAll('#phone .apps .app')].map(el => ({

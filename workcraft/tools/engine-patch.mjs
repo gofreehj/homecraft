@@ -14,6 +14,8 @@
 //                 Dock entries for stations without a page
 //   world/world.js  pass world.pickables through from build() to main.js
 //   ui/phone.js   resolve app icons from engine/, and add the Feishu tile
+//   ui/icons.js   resolve the Homecraft logo from engine/ once bundled
+//   ui/photo.js   resolve the Homecraft watermark from engine/ once bundled
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
@@ -104,6 +106,27 @@ const LOOKS = {
         find: `  mail: { tile: '#3b72d6', glyph: 'mail' },`,
         replace: `  mail: { tile: '#3b72d6', glyph: 'mail' },
   feishu: { tile: '#ffffff', img: app('feishu.png') },`,
+      },
+    ],
+  },
+  {
+    // The engine's own modules sit one level below engine/, so they address
+    // engine/assets as ../assets. In the bundle at engine/world-3d.js that
+    // resolves above engine/, where the site's assets live; point it back.
+    file: 'ui/icons.js',
+    edits: [
+      {
+        find: `const HOMECRAFT_LOGO_URL = new URL('../assets/homecraft-logo-32.png', import.meta.url).href;`,
+        replace: `const HOMECRAFT_LOGO_URL = new URL('./assets/homecraft-logo-32.png', import.meta.url).href;`,
+      },
+    ],
+  },
+  {
+    file: 'ui/photo.js',
+    edits: [
+      {
+        find: `  const HOMECRAFT_LOGO_URL = new URL('../assets/homecraft-logo.png', import.meta.url).href;`,
+        replace: `  const HOMECRAFT_LOGO_URL = new URL('./assets/homecraft-logo.png', import.meta.url).href;`,
       },
     ],
   },

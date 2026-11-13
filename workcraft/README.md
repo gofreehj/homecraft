@@ -120,6 +120,8 @@ adds to the engine:
 | `main.js` | clickable plates (`world.pickables` → `window.__homePlate`) and Dock entries for `page: false` stations |
 | `world/world.js` | passes `pickables` from `build()` to `main.js` |
 | `ui/phone.js` | resolves app icons from `engine/`, adds the Feishu tile |
+| `ui/icons.js` | resolves the Homecraft logo from `engine/` once bundled |
+| `ui/photo.js` | resolves the Homecraft watermark from `engine/` once bundled |
 
 Patches are applied to `dist/engine/` after staging, never to the source tree.
 An upstream update that changes those anchors makes staging fail with the file
