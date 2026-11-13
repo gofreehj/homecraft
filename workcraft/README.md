@@ -17,6 +17,8 @@ workcraft/
   routes.json         Miaoda application routes
   assets/             cover styles, images, app icons
   world/              the world: layout, house, furniture, showroom
+  assets/models/      the Aima headquarters GLB
+  vendor-additions/   three.js addons for this site (glTF loader)
   engine-additions/   files this site adds to the engine (Feishu app icon)
   tools/
     engine-patch.mjs  the site's engine patches, as exact anchors
@@ -48,6 +50,48 @@ node ../tools/check-site.mjs .  # metadata, skin and engine state (no install ne
 CDNs drop the old bundle.
 
 Deploy `dist/` as the application root. Nothing outside `dist/` ships.
+
+## Aima headquarters
+
+`world/aima.js`, `assets/models/aima-build.glb` and the glTF loader in
+`vendor-additions/` come from `feat/aima-headquarters`. The model's site is
+about 80×75 m and 71.5 m tall, so it cannot sit on the 74×57 m home island. It
+occupies an east campus of its own:
+
+- `HQ_ISLAND` (x 44–135, z −69–27) is a second `buildIsland` call, separated
+  from `HOME_ISLAND` by a 6 m channel. `ISLAND` is the union of both and remains
+  the engine's grid for navigation, the radar, fog and the opening shot.
+- `BRIDGE` (x 38–52, z −11…−6) is a short deck with rails from the east
+  driveway to the campus. Its west end meets the house lawn; its east end meets
+  the forecourt.
+- `HQ.position` is the GLB origin (site centre, ground y = 0) and `HQ.yaw` is
+  −π/2. The rotation turns the model's south passage and forecourt west, towards
+  the bridge and the house. `aima.js` rotates every local ground-floor
+  `FOOTPRINTS` rectangle and point light through the same transform.
+- `HQ_SITE` is the rotated paving footprint, drawn on the radar in `build.js`.
+  The two 1F passages through the podium stay open; the reflecting pool is
+  blocked.
+
+The model loads in the background as soon as `buildAima` runs, so the opening
+shot and the bridge view see it without a pop-in; `window.__aimaLoaded` turns
+true when it is added to the scene. At the bridge landing, the `office` station
+(`at: [58, −9.5]`) has no card and, on F, pulls the camera back over the water
+to frame the campus.
+
+To move the campus, change `HQ_ISLAND`, `BRIDGE`, `HQ.position` and `HQ_SITE`
+together. To remove it, set `HQ.enabled` to `false`; the campus island, bridge
+blocks, office station and radar rectangle are then left unused and should be
+removed too.
+
+### Budget notes
+
+The model is 1.7 MB and adds 15 draw calls, which exceeds the template's
+500 KB initial-load target. The settled house view measures 58 draw calls and
+the office view 56, within the 60 target; the opening shot, which shows both
+islands and the tower, measures 100 on the desktop and 70 on a phone. The model
+also returns two point lights, so with the house's two the engine keeps only
+the first two and the campus lights do not render. These are content-size and
+budget decisions for the site owner, not engine changes.
 
 ## Engine patches
 

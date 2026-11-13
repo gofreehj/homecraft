@@ -61,10 +61,17 @@ for (const view of VIEWS) {
     const startup = await page.evaluate(() => window.__homeStartupError || null);
     if (startup) throw new Error(`${startup.phase || 'startup'}: ${startup.message || 'unknown error'}`);
 
-    // The opening shot hides the HUD until it ends; cut it short so the check
-    // covers the radar, Dock and cards a visitor actually uses.
+    // The opening shot hides the HUD until it ends; capture it before cutting
+    // it short so the check covers the radar, Dock and cards a visitor uses.
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: join(out, `${view.name}-intro.png`) });
+    const introStats = await page.evaluate(() => __home.stats());
+    console.log(`  intro: ${introStats.calls} draw calls, ${introStats.triangles} triangles`);
     await page.evaluate(() => __home.rig?.skipIntro?.());
-    await page.waitForTimeout(2000);
+    // The engine clamps dt to 50 ms, so a software renderer needs many frames
+    // to finish the intro swoop; wait for the shot to end, not a wall time.
+    await page.waitForFunction(() => !__home.rig.introActive, null, { timeout: 30000 });
+    await page.waitForTimeout(300);
     const report = await page.evaluate(() => ({
       stats: __home.stats(),
       pages: document.querySelectorAll('#pages .page[data-station]').length,
@@ -90,6 +97,17 @@ for (const view of VIEWS) {
     if (!vehicle.open || !vehicle.name) throw new Error('the vehicle detail sheet did not open');
     console.log(`  vehicle sheet: ${vehicle.name}`);
     await page.keyboard.press('Escape');
+
+    // The Aima campus loads on approach; teleport to the bridge and wait for
+    // the model before framing it.
+    await page.evaluate(() => __home.player.teleport(58, -9.5));
+    await page.waitForFunction(() => window.__aimaLoaded, null, { timeout: 60000 });
+    await page.evaluate(() => __home.rig.showcase([25, 62, 105], [100, 32, -8]));
+    // Same 50 ms clamp: allow the 0.9 s glide to reach its goal on a slow GPU.
+    await page.waitForTimeout(4500);
+    const office = await page.evaluate(() => __home.stats());
+    console.log(`  office: ${office.calls} draw calls, ${office.triangles} triangles, ${office.frameMs} ms/frame`);
+    await page.screenshot({ path: join(out, `${view.name}-office.png`) });
 
     // The phone's app tiles, including the Feishu icon this site adds.
     await page.keyboard.press('p');

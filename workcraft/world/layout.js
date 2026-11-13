@@ -2,7 +2,29 @@
 // (towards the pool and the default camera), y is up. The ground is y = 0.
 
 // The south shore ends at the pool; its last sea-facing cell is submerged.
-export const ISLAND = { x0: -36, x1: 38, z0: -26, z1: 31 };
+// HOME_ISLAND keeps the original coastline; ISLAND is the engine's full grid,
+// which also covers the Aima campus east of the channel.
+export const HOME_ISLAND = { x0: -36, x1: 38, z0: -26, z1: 31 };
+export const HQ_ISLAND = { x0: 44, x1: 135, z0: -69, z1: 27 };
+export const ISLAND = { x0: -36, x1: 135, z0: -69, z1: 31 };
+
+// The short bridge from the east driveway to the campus forecourt. The deck
+// top is y = 0; rails sit on the north and south edges.
+export const BRIDGE = { x0: 38, x1: 52, z0: -11, z1: -6 };
+
+// Aima Technology headquarters, loaded from assets/models/aima-build.glb via
+// world/aima.js. The model is 80.3 x 75 m and 71.48 m tall, so it gets its own
+// island east of the home island. It is rotated -90 degrees: the rebuilt
+// model's south passage and forecourt face the bridge and the house.
+// `position` is the GLB origin (site centre, ground y = 0); `yaw` is radians.
+export const HQ = {
+  enabled: true,
+  position: [91.5, 0, -21.575],
+  yaw: -Math.PI / 2,
+};
+
+// World-space footprint of the rotated site paving, for the minimap.
+export const HQ_SITE = { x0: 52, x1: 127, z0: -61.075, z1: 19.225 };
 
 // House interior; the walls occupy the ring of cells just outside it.
 export const HOUSE = { x0: -20, x1: 24, z0: -12, z1: 16, height: 10 };
@@ -70,6 +92,9 @@ export const STATIONS = [
   // 想看参数就点车头前的信息牌。
   { id: 'lab', name: '展厅', en: 'Showroom', at: [12.9, -1.2], look: [17.2, -6.5], page: false,
     show: [[12.1, 2.05, -0.5], [17.2, 0.95, -5.6]] },
+  // At the bridge landing, F pulls back over the water to frame the campus.
+  { id: 'office', name: '总部', en: 'HQ', at: [58, -9.5], look: [82, -4], page: false,
+    show: [[25, 62, 105], [100, 32, -8]] },
   { id: 'coffee', name: '咖啡吧', en: 'Coffee bar', at: [8, 13.3], look: [8, 14.8] },
   { id: 'pool', name: '泳池', en: 'Pool', at: [-5, 22.6], look: [-5, 27] },
   // The foot of the mountain path at the north point. No page of its own: the
@@ -106,18 +131,22 @@ export const FOREST = [
   // Three trees stand aside, clearing the way from the back door to the mountain path.
   // The tree behind the master suite stands back too, clear of its north glass.
   [-33,-4],[-34,20],[-13,-17],[22,-21],[-22,-23],[-18,-17],
+  // Campus ring: a sparse screen outside the site paving, clear of the bridge.
+  [47,-60],[47,-42],[47,-22],[47,12],[47,22],
+  [132,-58],[132,-34],[132,8],[132,20],
+  [62,-66],[92,-66],[120,-66],
 ];
 
 // The baked lamp light covers the house (min corner, size in metres, texels).
 export const LIGHT_VOLUME = { min: [-22, -1, -14], extent: [48, 12, 40], size: [48, 16, 40] };
 // The weather's shelter map covers the island, the mountain and the pier.
-export const SHELTER = { x0: -64, z0: -80, w: 128, d: 128 };
+export const SHELTER = { x0: -70, z0: -90, w: 220, d: 140 };
 // Flying out of the house goes through the front doors.
 export const DOORWAY = [{ x: 0.5, y: 1, z: 15 }, { x: 0.5, y: 1.2, z: 18 }];
 export const EXIT = { x: 0.5, z: 18.6 };
 // The opening shot starts high over the whole island (a portrait screen stands
 // further back so the house and the mountain still fit) and looks at `look`.
-export const INTRO = { pos: [52, 40, 66], portrait: [83, 64, 106], look: [0, 0, 2] };
+export const INTRO = { pos: [46, 62, 122], portrait: [150, 80, 180], look: [64, 30, -10] };
 
 // The cat stays indoors and naps on the sofa; the dog roams the terrace and
 // comes in by the front door. Routes round the sofa and through the doorway

@@ -54,6 +54,11 @@ for (const item of ['engine', 'vendor']) {
   cpSync(from, join(dist, item), { recursive: true });
 }
 
+// Site-specific three.js addons: the glTF loader and its helper live here, not
+// in the shared vendor/, so the repository's vendor stays upstream-identical.
+const addons = join(site, 'vendor-additions');
+if (existsSync(addons)) cpSync(addons, join(dist, 'vendor'), { recursive: true });
+
 const version = JSON.parse(readFileSync(join(repo, 'engine/manifest.json'), 'utf8')).version;
 applyEnginePatches(join(dist, 'engine'));
 log(`engine ${version} patched`);
