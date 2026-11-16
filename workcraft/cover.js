@@ -31,9 +31,9 @@ const ASSET_BASE = (() => {
   try { return new URL('.', location.href).href; } catch (e) { return './'; }
 })();
 
-// 资源版本号：发版时改这里，可以让浏览器和 CDN 丢弃旧的缓存副本。
-// 它也兼作排查用——线上取到旧文件时，先升这个值。
-const RES_VER = '13';
+// 资源版本号：由 tools/stage.mjs 在发布时按构建内容自动写入。
+// 源文件里的值只是占位，浏览器和 CDN 会按新的 ?v= 取新副本。
+const RES_VER = 'dev';
 
 // 3D 引擎由 esbuild 预先打包成 engine/world-3d.js（three 与所有子模块都内联在里面），
 // 所以运行时不需要 import map，也不依赖几十个子文件的相对导入。
