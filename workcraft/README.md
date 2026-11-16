@@ -85,9 +85,13 @@ npx @gltf-transform/cli@4 optimize source.glb assets/models/aima-build.glb --com
 `--palette false` keeps the materials separate; the palette pass would merge
 them and break the per-material reflection and night tuning.
 
-The model loads in the background as soon as `buildAima` runs, so the opening
-shot and the bridge view see it without a pop-in; `window.__aimaLoaded` turns
-true when it is added to the scene. At the bridge landing, the `office` station
+`cover.js` starts the model download when the visitor enters, in parallel with
+the engine bundle, and `aima.js` parses those bytes directly. `setupAima`
+exposes the load as `ready`, and an engine patch holds the opening shot until it
+resolves (at most three seconds), so the camera never frames an empty campus; if
+the model fails or misses that window, the shot is skipped and the visit starts
+in the house view. `window.__aimaLoaded` turns true when the model is added to
+the scene. At the bridge landing, the `office` station
 (`at: [58, −9.5]`) has no card and, on F, pulls the camera back over the water
 to frame the campus.
 
@@ -117,7 +121,7 @@ adds to the engine:
 
 | File | Change |
 |---|---|
-| `main.js` | clickable plates (`world.pickables` → `window.__homePlate`) and Dock entries for `page: false` stations |
+| `main.js` | clickable plates (`world.pickables` → `window.__homePlate`), Dock entries for `page: false` stations, and a readiness wait before the opening shot |
 | `world/world.js` | passes `pickables` from `build()` to `main.js` |
 | `ui/phone.js` | resolves app icons from `engine/`, adds the Feishu tile |
 | `ui/icons.js` | resolves the Homecraft logo from `engine/` once bundled |

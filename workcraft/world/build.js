@@ -74,6 +74,8 @@ export function setup({ stage, world, player, avatar, sound }) {
   const aima = HQ.enabled ? setupAima({ stage }) : null;
   stage.scene.add(vertec.mesh);
   return {
+    // The engine holds the opening shot until this resolves.
+    ready: aima?.ready,
     update(dt) {
       vertec.update(dt, player);
       world.outer.update(dt, stage.camera);

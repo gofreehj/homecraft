@@ -10,8 +10,9 @@
 // anchor, and run tools/smoke.mjs. Do not copy patched files back into engine/.
 //
 // The patches, in order:
-//   main.js       clickable plates (world.pickables -> window.__homePlate) and
-//                 Dock entries for stations without a page
+//   main.js       clickable plates (world.pickables -> window.__homePlate),
+//                 Dock entries for stations without a page, and an opening-shot
+//                 wait for assets the site reports through setup().ready
 //   world/world.js  pass world.pickables through from build() to main.js
 //   ui/phone.js   resolve app icons from engine/, and add the Feishu tile
 //   ui/icons.js   resolve the Homecraft logo from engine/ once bundled
@@ -69,6 +70,20 @@ export const PATCHES = [
     // Dock button: it flies the player there and shows the camera move.
     const s = publicStations.find(s => s.id === id) || STATIONS.find(st => st.id === id && st.at);
     if (s) dockButton(() => nameOf(s), s.icon || s.id, () => go(s.id)).dataset.station = s.id;`,
+      },
+      {
+        find: `  } else if (!reducedMotion) rig.startIntro(player);
+  finishLoading();`,
+        replace: `  } else if (!reducedMotion) {
+    // Some sites put a background-loaded model in the opening shot. Wait for it
+    // so the camera never frames an empty site, but cap the wait; on timeout or
+    // failure, start in the house view instead of holding the loading screen.
+    const ready = extras.ready
+      ? await Promise.race([extras.ready, new Promise(resolve => setTimeout(() => resolve('timeout'), 3000))])
+      : true;
+    if (ready !== false && ready !== 'timeout') rig.startIntro(player);
+  }
+  finishLoading();`,
       },
     ],
   },

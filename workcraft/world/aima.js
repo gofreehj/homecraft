@@ -7,7 +7,8 @@
 //
 // `GLTFLoader` resolves asynchronously after the block world finishes initial
 // shadow baking, so the module re-requests a shadow map update once loaded and
-// drives reflective sky sheen and night illumination from `stage`.
+// drives reflective sky sheen and night illumination from `stage`. The opening
+// shot waits for `setupAima().ready` so it never frames the empty campus.
 import * as THREE from 'three';
 import { GLTFLoader } from '../vendor/three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from '../vendor/three/addons/libs/meshopt_decoder.module.js';
@@ -49,6 +50,7 @@ const FOOTPRINTS = [
 
 const state = {
   loadToken: 0,
+  ready: Promise.resolve(true),
   envMaterials: [],
   litMaterials: [],
   envTarget: null,
@@ -139,32 +141,50 @@ export function buildAima({ stage }) {
   const place = (x, z) => ({ x: ox + x * cos + z * sin, z: oz - x * sin + z * cos });
   window.__aimaLoaded = false;
   let started = false;
+  // Resolves true once the model is in the scene, false when it cannot load.
+  // The engine waits for this before the opening shot.
+  let settle;
+  state.ready = new Promise(resolve => { settle = resolve; });
 
   // The model is large, so it loads in the background while the house renders;
-  // the intro camera already looks across the channel at the campus.
+  // the intro camera waits at the forecourt until it is in the scene.
   startLoad = () => {
     if (started) return;
     started = true;
     // The GLB is meshopt-compressed; the decoder is vendored with the loader.
     const loader = new GLTFLoader();
     loader.setMeshoptDecoder(MeshoptDecoder);
-    loader.load(
-      MODEL.href,
-      gltf => {
-        if (token !== state.loadToken) return;
-        const root = gltf.scene;
-        state.envTarget = createSkyProbe(stage.renderer);
-        root.name = 'aima-hq';
-        root.position.set(ox, oy, oz);
-        root.rotation.y = yaw;
-        configureMaterials(root, state.envTarget.texture);
-        stage.scene.add(root);
-        stage.renderer.shadowMap.needsUpdate = true;
-        window.__aimaLoaded = true;
-      },
-      undefined,
-      error => console.error('Aima headquarters failed to load', error),
-    );
+    const onLoad = gltf => {
+      if (token !== state.loadToken) return;
+      const root = gltf.scene;
+      state.envTarget = createSkyProbe(stage.renderer);
+      root.name = 'aima-hq';
+      root.position.set(ox, oy, oz);
+      root.rotation.y = yaw;
+      configureMaterials(root, state.envTarget.texture);
+      stage.scene.add(root);
+      stage.renderer.shadowMap.needsUpdate = true;
+      window.__aimaLoaded = true;
+      settle(true);
+    };
+    const onError = error => {
+      console.error('Aima headquarters failed to load', error);
+      settle(false);
+    };
+    const load = () => loader.load(MODEL.href, onLoad, undefined, onError);
+    // cover.js starts the download with the engine bundle; parse those bytes
+    // instead of requesting the model a second time.
+    const preloaded = window.__aimaGLB;
+    if (!preloaded) { load(); return; }
+    preloaded.then(buffer => {
+      if (token !== state.loadToken) return;
+      if (!buffer) { load(); return; }
+      try {
+        loader.parse(buffer, new URL('./', MODEL).href, onLoad, onError);
+      } catch (error) {
+        onError(error);
+      }
+    }).catch(load);
   };
 
   const obstacles = FOOTPRINTS.map(r => {
@@ -192,6 +212,7 @@ export function buildAima({ stage }) {
 
 export function setupAima({ stage }) {
   return {
+    ready: state.ready,
     update() {
       const night = stage.night;
       const reflectionScale = (1 - 0.82 * night) * (1 - 0.55 * stage.veil);

@@ -401,6 +401,12 @@ function enter(event) {
     return;
   }
 
+  // 和引擎 bundle 并行取回 Aima 模型；aima.js 直接解析这份数据，
+  // 开场镜头就不用再等一次网络往返。
+  window.__aimaGLB = fetch(new URL('assets/models/aima-build.glb', ASSET_BASE))
+    .then(res => (res.ok ? res.arrayBuffer() : null))
+    .catch(() => null);
+
   booted = true;
   if (errorBox) errorBox.hidden = true;
   if (hint) { hint.textContent = '正在加载小屋，第一次需要几秒…'; hint.classList.remove('err'); }
