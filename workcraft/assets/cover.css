@@ -690,3 +690,8 @@ html:not(.in-3d) #pages { display: none !important; }
   .vsheet-card { padding: 22px 20px 18px; border-radius: 14px; }
   .vsheet-name { font-size: 23px; }
 }
+
+/* The radar carries two engine credits. This site shows neither: the homecraft
+   badge is disabled in home.config.js, and the BetterMapIt icon has no config
+   switch, so it is hidden here. */
+#minimap .badge.credit { display: none; }
