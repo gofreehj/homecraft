@@ -18,7 +18,7 @@ workcraft/
   assets/             cover styles, images, app icons
   world/              the world: layout, house, furniture, showroom
   assets/models/      the Aima headquarters GLB
-  vendor-additions/   three.js addons for this site (glTF loader, meshopt decoder)
+  vendor-additions/   three.js addons for this site (glTF loader)
   engine-additions/   files this site adds to the engine (Feishu app icon)
   tools/
     engine-patch.mjs  the site's engine patches, as exact anchors
@@ -72,26 +72,38 @@ occupies an east campus of its own:
   The two 1F passages through the podium stay open; the reflecting pool is
   blocked.
 
-`aima-build.glb` is meshopt-compressed with `KHR_mesh_quantization` (289 KB,
-down from 1.7 MB). `aima.js` enables the vendored `MeshoptDecoder` on the
-loader. The compression preserves all 15 material names, which `ENV_INTENSITY`
-and `NIGHT_GLOW` look up. To rebuild after editing a source GLB, run from
-`workcraft/`:
+`aima-build.glb` is quantized with `KHR_mesh_quantization` and otherwise
+uncompressed: 950 KB, up from 289 KB with meshopt. The Feishu app page that
+hosts this site sends a Content Security Policy without `'wasm-unsafe-eval'`,
+which blocks the WebAssembly module that meshopt and Draco decoders need, so
+the model has to decode with the loader alone. Quantization preserves all 15
+material names, which `ENV_INTENSITY` and `NIGHT_GLOW` look up. To rebuild
+after editing a source GLB, run from `workcraft/`:
 
 ```sh
-npx @gltf-transform/cli@4 optimize source.glb assets/models/aima-build.glb --compress meshopt --palette false --simplify false --texture-compress false
+npx @gltf-transform/cli@4 optimize source.glb assets/models/aima-build.glb --compress quantize --palette false --simplify false --texture-compress false
 ```
 
 `--palette false` keeps the materials separate; the palette pass would merge
-them and break the per-material reflection and night tuning.
+them and break the per-material reflection and night tuning. Do not switch to
+`--compress meshopt` or `--compress draco`: both need a WebAssembly decoder,
+and the model then fails to load on the Feishu page.
 
-`cover.js` starts the model download when the visitor enters, in parallel with
-the engine bundle, and `aima.js` parses those bytes directly. A response that is
-not a glTF 2 binary is discarded, and a failed load is retried with a fresh
-query, because a host can answer a missing file with its page fallback and a
-CDN can cache the failure. `setupAima` exposes the load as `ready`, and an
-engine patch holds the opening shot until it resolves (at most ten seconds), so
-the camera never frames an empty campus. The shot plays even if the model fails,
+`cover.js` resolves the model URL from the site's own asset base, publishes it
+as `window.__aimaModelURL` and starts the download when the visitor enters, in
+parallel with the engine bundle; `aima.js` parses those bytes directly and uses
+the published URL for a retry. It does not derive the path from
+`import.meta.url`: the Feishu page loads the engine bundle from a CDN host whose
+paths answer 403. A response that is not a glTF 2 binary is discarded, and a
+failed load is retried with a fresh query, because a host can answer a missing
+file with its page fallback and a CDN can cache the failure. The vendored
+`vendor-additions/three/addons/loaders/GLTFLoader.js` carries one site patch:
+textures load through `TextureLoader` instead of `ImageBitmapLoader`, because
+the former decodes a `blob:` URL as an `<img>` source (`img-src blob:`) while
+the latter fetches it (`connect-src`, which the page limits to non-blob URLs).
+`setupAima` exposes the load as `ready`, and an engine patch holds the opening
+shot until it resolves (at most ten seconds), so the camera never frames an
+empty campus. The shot plays even if the model fails,
 because dropping the camera move is worse than missing the building behind it;
 up to that point the loading screen stays up. `window.__aimaLoaded` turns true
 when the model is added to the scene. At the bridge landing, the `office` station
@@ -105,9 +117,10 @@ removed too.
 
 ### Budget notes
 
-The model is 289 KB after meshopt compression, plus the 25 KB decoder; it no
-longer exceeds the 500 KB initial-load target by itself, though the engine
-bundle still sets the total. It adds 15 draw calls. The settled house view
+The model is 950 KB uncompressed. It loads only after the visitor enters, so it
+is not part of the first paint, but it exceeds the 500 KB initial-load target by
+itself; meshopt compression would bring it back to 289 KB, at the cost of the
+model failing on the Feishu page. It adds 15 draw calls. The settled house view
 measures 58 draw calls and the office view 56, within the 60 target. The
 opening shot starts close to the Aima forecourt and measures 21 draw calls at
 both desktop and phone size; the model accounts for 15 of those calls. The

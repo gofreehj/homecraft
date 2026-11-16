@@ -11,11 +11,17 @@
 // shot waits for `setupAima().ready` so it never frames the empty campus.
 import * as THREE from 'three';
 import { GLTFLoader } from '../vendor/three/addons/loaders/GLTFLoader.js';
-import { MeshoptDecoder } from '../vendor/three/addons/libs/meshopt_decoder.module.js';
 import { canvasTexture } from '@engine/world/textures.js';
 import { HQ } from './layout.js';
 
 const MODEL = new URL('../assets/models/aima-build.glb', import.meta.url);
+
+// A host may serve the engine bundle from a CDN URL, which leaves
+// `import.meta.url` pointing at a path that answers 403. cover.js knows the
+// real asset base and publishes the model URL it preloads, so prefer that one.
+function modelURL() {
+  return window.__aimaModelURL || MODEL.href;
+}
 
 // Material response tuning layered over the GLB's own authored colours,
 // baked textures (`CurtainGlass`, `RoofLawn`, `SiteAsphalt`, `LogoAima`), and PBR factors.
@@ -159,9 +165,10 @@ export function buildAima({ stage }) {
   startLoad = () => {
     if (started) return;
     started = true;
-    // The GLB is meshopt-compressed; the decoder is vendored with the loader.
+    // The GLB is uncompressed with `KHR_mesh_quantization` only, so the
+    // loader needs no decoder module. A host whose Content Security Policy
+    // blocks WebAssembly can still render it.
     const loader = new GLTFLoader();
-    loader.setMeshoptDecoder(MeshoptDecoder);
     const onLoad = gltf => {
       if (token !== state.loadToken) return;
       const root = gltf.scene;
@@ -181,11 +188,12 @@ export function buildAima({ stage }) {
     let attempts = 0;
     const onError = error => {
       if (++attempts < 3) { load(); return; }
-      console.error('Aima headquarters failed to load', MODEL.href, error);
+      console.error('Aima headquarters failed to load', modelURL(), error);
       settle(false);
     };
     const load = () => {
-      const url = attempts ? `${MODEL.href}${MODEL.href.includes('?') ? '&' : '?'}retry=${attempts}` : MODEL.href;
+      const href = modelURL();
+      const url = attempts ? `${href}${href.includes('?') ? '&' : '?'}retry=${attempts}` : href;
       loader.load(url, onLoad, undefined, onError);
     };
     // cover.js starts the download with the engine bundle; parse those bytes
@@ -196,7 +204,7 @@ export function buildAima({ stage }) {
       if (token !== state.loadToken) return;
       if (!isGlb(buffer)) { load(); return; }
       try {
-        loader.parse(buffer, new URL('./', MODEL).href, onLoad, onError);
+        loader.parse(buffer, new URL('./', modelURL()).href, onLoad, onError);
       } catch (error) {
         onError(error);
       }

@@ -402,8 +402,12 @@ function enter(event) {
   }
 
   // 和引擎 bundle 并行取回 Aima 模型；aima.js 直接解析这份数据，
-  // 开场镜头就不用再等一次网络往返。
-  window.__aimaGLB = fetch(new URL('assets/models/aima-build.glb', ASSET_BASE))
+  // 开场镜头就不用再等一次网络往返。模型地址也交给引擎：宿主可能把 bundle
+  // 从 CDN 地址加载，那里的相对路径并不指向站点资源。
+  const modelURL = new URL('assets/models/aima-build.glb', ASSET_BASE);
+  modelURL.search = '?v=' + encodeURIComponent(RES_VER);
+  window.__aimaModelURL = modelURL.href;
+  window.__aimaGLB = fetch(modelURL)
     .then(res => (res.ok ? res.arrayBuffer() : null))
     .catch(() => null);
 
