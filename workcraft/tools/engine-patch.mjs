@@ -76,12 +76,15 @@ export const PATCHES = [
   finishLoading();`,
         replace: `  } else if (!reducedMotion) {
     // Some sites put a background-loaded model in the opening shot. Wait for it
-    // so the camera never frames an empty site, but cap the wait; on timeout or
-    // failure, start in the house view instead of holding the loading screen.
-    const ready = extras.ready
-      ? await Promise.race([extras.ready, new Promise(resolve => setTimeout(() => resolve('timeout'), 3000))])
-      : true;
-    if (ready !== false && ready !== 'timeout') rig.startIntro(player);
+    // so the camera never frames an empty site. A slow first visit may need a
+    // few seconds for that model, and the cover allows 25 s, so hold the
+    // loading screen for up to 10 s; after that play the shot anyway, because
+    // losing the camera move is worse than missing the model behind it.
+    if (extras.ready) {
+      const ready = await Promise.race([extras.ready, new Promise(resolve => setTimeout(() => resolve('timeout'), 10000))]);
+      if (ready !== true) console.warn('opening shot: the world asset it waits for is not ready');
+    }
+    rig.startIntro(player);
   }
   finishLoading();`,
       },

@@ -133,6 +133,14 @@ function configureMaterials(root, envMap) {
   });
 }
 
+// glTF binary container: magic "glTF" and version 2. A host's HTML fallback
+// page, served with 200 for a missing asset, would otherwise reach the parser.
+function isGlb(buffer) {
+  if (!buffer || buffer.byteLength < 20) return false;
+  const view = new DataView(buffer);
+  return view.getUint32(0, true) === 0x46546c67 && view.getUint32(4, true) === 2;
+}
+
 export function buildAima({ stage }) {
   resetState();
   const token = ++state.loadToken;
@@ -167,18 +175,26 @@ export function buildAima({ stage }) {
       window.__aimaLoaded = true;
       settle(true);
     };
+    // A host can answer a missing file with its page fallback and a 200, and a
+    // CDN can cache the failure. Validate the preloaded bytes and give the
+    // request one more try with a fresh query before reporting the model lost.
+    let attempts = 0;
     const onError = error => {
-      console.error('Aima headquarters failed to load', error);
+      if (++attempts < 3) { load(); return; }
+      console.error('Aima headquarters failed to load', MODEL.href, error);
       settle(false);
     };
-    const load = () => loader.load(MODEL.href, onLoad, undefined, onError);
+    const load = () => {
+      const url = attempts ? `${MODEL.href}${MODEL.href.includes('?') ? '&' : '?'}retry=${attempts}` : MODEL.href;
+      loader.load(url, onLoad, undefined, onError);
+    };
     // cover.js starts the download with the engine bundle; parse those bytes
     // instead of requesting the model a second time.
     const preloaded = window.__aimaGLB;
     if (!preloaded) { load(); return; }
     preloaded.then(buffer => {
       if (token !== state.loadToken) return;
-      if (!buffer) { load(); return; }
+      if (!isGlb(buffer)) { load(); return; }
       try {
         loader.parse(buffer, new URL('./', MODEL).href, onLoad, onError);
       } catch (error) {

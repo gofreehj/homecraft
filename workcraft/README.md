@@ -86,12 +86,15 @@ npx @gltf-transform/cli@4 optimize source.glb assets/models/aima-build.glb --com
 them and break the per-material reflection and night tuning.
 
 `cover.js` starts the model download when the visitor enters, in parallel with
-the engine bundle, and `aima.js` parses those bytes directly. `setupAima`
-exposes the load as `ready`, and an engine patch holds the opening shot until it
-resolves (at most three seconds), so the camera never frames an empty campus; if
-the model fails or misses that window, the shot is skipped and the visit starts
-in the house view. `window.__aimaLoaded` turns true when the model is added to
-the scene. At the bridge landing, the `office` station
+the engine bundle, and `aima.js` parses those bytes directly. A response that is
+not a glTF 2 binary is discarded, and a failed load is retried with a fresh
+query, because a host can answer a missing file with its page fallback and a
+CDN can cache the failure. `setupAima` exposes the load as `ready`, and an
+engine patch holds the opening shot until it resolves (at most ten seconds), so
+the camera never frames an empty campus. The shot plays even if the model fails,
+because dropping the camera move is worse than missing the building behind it;
+up to that point the loading screen stays up. `window.__aimaLoaded` turns true
+when the model is added to the scene. At the bridge landing, the `office` station
 (`at: [58, −9.5]`) has no card and, on F, pulls the camera back over the water
 to frame the campus.
 
